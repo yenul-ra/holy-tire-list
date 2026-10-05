@@ -1,21 +1,3 @@
-"""Smart square crop: keeps faces and the main subject in frame.
-
-Usage:
-    python smart_crop.py INPUT_FOLDER [OUTPUT_FOLDER] [--size 400]
-
-How it picks the crop:
-  1. Looks for faces (OpenCV Haar cascades).
-  2. Also builds a "what stands out" map (spectral-residual saliency),
-     which finds objects and other interesting areas.
-  3. Slides a square window along the image and keeps the position that
-     covers the most faces and the most interesting area.
-  4. If nothing stands out, it falls back to a centered crop.
-
-Originals are never changed. Cropped copies go to OUTPUT_FOLDER
-(default: INPUT_FOLDER/smart_cropped).
-
-Needs:  pip install pillow numpy opencv-python
-"""
 import argparse
 from pathlib import Path
 
