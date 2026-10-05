@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tier List Maker</title>
+<style>
+/* ===== Theme ===== */
+:root{--bg:#121214;--panel:#1c1c20;--zone:#1a1a1a;--line:#2c2c32;--text:#ececf0;--muted:#9a9aa6;--accent:#6ea8ff;--r:10px}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,select,input{font:inherit}
+/* ===== Toolbar ===== */
+header{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;background:rgba(18,18,20,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0 12px 0 0;font-weight:700;letter-spacing:.2px}
+.btn{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;transition:.15s}
+.btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+.btn.primary{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600}
+.btn.danger:hover{border-color:#ff6b6b;color:#ff9b9b}
+.sp{flex:1}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* ===== Board ===== */
+main{max-width:1200px;margin:20px auto;padding:0 16px 60px}
+#tiers{border:2px solid #000;border-radius:var(--r);overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.tier{display:flex;border-bottom:2px solid #000;background:var(--zone)}
+.tier:last-child{border-bottom:0}
+.label{flex:0 0 120px;min-height:104px;display:flex;align-items:center;justify-content:center;padding:6px;text-align:center;font-weight:700;font-size:20px;word-break:break-word;border-right:2px solid #000}
+.ltxt{outline:0;min-width:20px;cursor:text;max-width:100%}
+.ltxt:focus{box-shadow:0 0 0 2px rgba(0,0,0,.45);border-radius:4px}
+.zone{flex:1;display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px;padding:6px;min-height:104px;transition:background .15s,box-shadow .15s}
+.zone.over{background:#26303f;box-shadow:inset 0 0 0 2px var(--accent)}
+.ctl{flex:0 0 38px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;background:#141416;border-left:1px solid var(--line)}
+.ctl button,.ctl input{width:26px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--muted);cursor:pointer;font-size:12px}
+.ctl button:hover{color:var(--text);border-color:var(--accent)}
+.ctl input[type=color]{padding:1px;background:none}
+/* ===== Items ===== */
+.item{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px;border-radius:8px;cursor:grab;user-select:none;touch-action:none;transition:transform .15s,box-shadow .15s;max-width:calc(var(--s) + 6px)}
+.item:hover{transform:scale(1.04);box-shadow:0 4px 14px rgba(0,0,0,.5);z-index:2}
+.item img{display:block;max-width:var(--s);max-height:var(--s);border-radius:6px;pointer-events:none;-webkit-user-drag:none}
+.item .t{font-size:12px;color:var(--text);text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item.dragging{opacity:.25}
+.ghost{position:fixed;z-index:100;pointer-events:none;opacity:.9;transform:rotate(-3deg) scale(1.08);box-shadow:0 12px 30px rgba(0,0,0,.6)}
+.ph{width:6px;align-self:stretch;min-height:60px;border-radius:3px;background:var(--accent);animation:pulse .8s infinite alternate}
+@keyframes pulse{to{opacity:.4}}
+/* ===== Pool ===== */
+.poolwrap{margin-top:24px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.poolwrap h2{margin:0 0 8px;font-size:15px;color:var(--muted);font-weight:600}
+#pool{min-height:120px;border:2px dashed var(--line);border-radius:8px;background:#161618}
+#pool:empty::before{content:"No unranked images. Use Add Image to upload some, then drag them onto a tier.";color:var(--muted);padding:10px;width:100%;text-align:center;align-self:center}
+/* ===== Menu & toast ===== */
+#menu{position:fixed;z-index:60;width:240px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px;box-shadow:0 12px 36px rgba(0,0,0,.6);display:none;flex-direction:column;gap:8px}
+#menu.open{display:flex}
+#menu label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+#menu input[type=text],#menu select{background:#121214;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px}
+#menu .row{display:flex;gap:6px}#menu .row .btn{flex:1;padding:6px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:#2a2a31;border:1px solid var(--line);padding:9px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:90}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (max-width:640px){
+  h1{width:100%;margin:0}.btn{padding:6px 9px;font-size:13px}.sp{display:none}
+  .label{flex-basis:78px;font-size:16px}.ctl{flex-basis:34px}
+  .ctl button,.ctl input{width:24px;height:24px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Tier List Maker</h1>
+  <button class="btn primary" id="bAdd">Add Image</button>
+  <button class="btn" id="bTier">Add Tier</button>
+  <span class="sp"></span>
+  <button class="btn" id="bSave">Save</button>
+  <button class="btn" id="bLoad">Load</button>
+  <button class="btn" id="bPng">Export PNG</button>
+  <button class="btn" id="bJson">Export JSON</button>
+  <button class="btn" id="bImp">Import JSON</button>
+  <button class="btn danger" id="bReset">Reset</button>
+</header>
+<main>
+  <div id="tiers"></div>
+  <section class="poolwrap">
+    <h2>Unranked</h2>
+    <div class="zone" id="pool" data-zone="pool"></div>
+  </section>
+</main>
+<div id="menu"></div>
+<div id="toast"></div>
+<input type="file" id="fImg" accept="image/*" multiple hidden>
+<input type="file" id="fRep" accept="image/*" hidden>
+<input type="file" id="fJson" accept="application/json,.json" hidden>
+
+<script>
+/* ===== State ===== */
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 9);
+const DRAFT = 'tierlist.draft', SAVED = 'tierlist.saved';
+const COLORS = ['#ff7f7f','#ffbf7f','#ffdf7f','#ffff7f','#bfff7f','#7fdfff'];
+const fresh = () => ({
+  tiers: ['S','A','B','C','D','F'].map((n, i) => ({ id: uid(), name: n, color: COLORS[i], items: [] })),
+  pool: [], items: {}   // items: id -> {src, title, size}
+});
+let S = read(DRAFT) || fresh();
+
+function read(k){ try { const d = JSON.parse(localStorage.getItem(k)); return valid(d) ? d : null; } catch { return null; } }
+function valid(d){ return d && Array.isArray(d.tiers) && Array.isArray(d.pool) && d.items && typeof d.items === 'object'; }
+function persist(k){ try { localStorage.setItem(k, JSON.stringify(S)); return true; } catch { toast('Storage is full. Export JSON to keep your work.'); return false; } }
+const save = () => persist(DRAFT);
+let tt; function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2200); }
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+
+/* ===== Helpers ===== */
+function ink(hex){ const n = parseInt(hex.slice(1), 16), r = n >> 16, g = n >> 8 & 255, b = n & 255; return (r*299 + g*587 + b*114) / 1000 > 140 ? '#111' : '#fff'; }
+function listOf(zone){ return zone === 'pool' ? S.pool : S.tiers.find(t => t.id === zone).items; }
+function removeItem(id){ S.pool = S.pool.filter(x => x !== id); S.tiers.forEach(t => t.items = t.items.filter(x => x !== id)); }
+function shrink(file, max = 480){ // downscale uploads so localStorage stays small
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onerror = rej;
+    fr.onload = () => { const im = new Image(); im.onerror = rej; im.onload = () => {
+      const k = Math.min(1, max / Math.max(im.width, im.height)), c = document.createElement('canvas');
+      c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      let u = c.toDataURL('image/webp', .85); if (!u.startsWith('data:image/webp')) u = c.toDataURL('image/jpeg', .85);
+      res(u); }; im.src = fr.result; };
+    fr.readAsDataURL(file);
+  });
+}
+
+/* ===== Render ===== */
+function render(){
+  const box = $('#tiers'); box.innerHTML = '';
+  S.tiers.forEach((t, i) => {
+    const row = el('div', 'tier'), lab = el('div', 'label'), tx = el('div', 'ltxt', t.name);
+    lab.style.background = t.color; lab.style.color = ink(t.color);
+    tx.contentEditable = true; tx.spellcheck = false; tx.title = 'Click to rename';
+    tx.oninput = () => t.name = tx.textContent;
+    tx.onblur = save;
+    tx.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); tx.blur(); } };
+    lab.append(tx);
+    const ctl = el('div', 'ctl');
+    const up = el('button', '', '▲'), dn = el('button', '', '▼'), del = el('button', '', '✕'), col = el('input');
+    up.title = 'Move tier up'; dn.title = 'Move tier down'; del.title = 'Delete tier';
+    col.type = 'color'; col.value = t.color; col.title = 'Tier color';
+    col.oninput = () => { t.color = col.value; lab.style.background = t.color; lab.style.color = ink(t.color); };
+    col.onchange = save;
+    up.onclick = () => move(i, -1); dn.onclick = () => move(i, 1);
+    del.onclick = () => {
+      if (S.tiers.length === 1) return toast('Keep at least one tier.');
+      if (t.items.length && !confirm(`Delete "${t.name}"? Its images go back to Unranked.`)) return;
+      S.pool.push(...t.items); S.tiers.splice(i, 1); render(); save();
+    };
+    ctl.append(up, dn, col, del);
+    row.append(lab, zone(t.id, t.items), ctl);
+    box.append(row);
+  });
+  const p = $('#pool'); p.innerHTML = '';
+  S.pool.forEach(id => S.items[id] && p.append(itemEl(id)));
+}
+function zone(id, ids){ const z = el('div', 'zone'); z.dataset.zone = id; ids.forEach(x => S.items[x] && z.append(itemEl(x))); return z; }
+function move(i, d){ const j = i + d; if (j < 0 || j >= S.tiers.length) return; [S.tiers[i], S.tiers[j]] = [S.tiers[j], S.tiers[i]]; render(); save(); }
+function itemEl(id){
+  const it = S.items[id], e = el('div', 'item');
+  e.dataset.id = id; e.style.setProperty('--s', (it.size || 100) + 'px');
+  const im = el('img'); im.src = it.src; im.alt = it.title || 'item'; im.draggable = false;
+  e.append(im);
+  if (it.title) e.append(el('div', 't', it.title));
+  e.addEventListener('pointerdown', ev => startDrag(ev, e, id));
+  e.addEventListener('contextmenu', ev => { ev.preventDefault(); openMenu(id, ev.clientX, ev.clientY); });
+  return e;
+}
+
+/* ===== Drag & drop (pointer events: mouse + touch) ===== */
+function startDrag(ev, node, id){
+  if (ev.button > 0) return;
+  const sx = ev.clientX, sy = ev.clientY, rect = node.getBoundingClientRect();
+  let ghost = null, ph = null, over = null, going = false, timer = null;
+  const touch = ev.pointerType === 'touch';
+
+  const begin = () => {
+    going = true; closeMenu();
+    ghost = node.cloneNode(true); ghost.className = 'item ghost';
+    ghost.style.cssText += `;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px`;
+    document.body.append(ghost);
+    node.classList.add('dragging'); ph = el('div', 'ph');
+  };
+  const zoneAt = (x, y) => { const z = document.elementFromPoint(x, y); return z && z.closest('[data-zone]'); };
+  const onMove = e => {
+    if (!going) {
+      if (Math.hypot(e.clientX - sx, e.clientY - sy) < 6) return;
+      begin();
+    }
+    e.preventDefault();
+    ghost.style.left = rect.left + e.clientX - sx + 'px'; ghost.style.top = rect.top + e.clientY - sy + 'px';
+    if (touch) { // auto-scroll near screen edges
+      if (e.clientY < 80) scrollBy(0, -12); else if (innerHeight - e.clientY < 80) scrollBy(0, 12);
+    }
+    const z = zoneAt(e.clientX, e.clientY);
+    if (over && over !== z) over.classList.remove('over');
+    over = z; if (!z) return ph.remove();
+    z.classList.add('over');
+    const kids = [...z.querySelectorAll('.item')].filter(k => k !== node);
+    let before = null;
+    for (const k of kids) {
+      const r = k.getBoundingClientRect();
+      if (e.clientY < r.bottom && (e.clientY < r.top || e.clientX < r.left + r.width / 2)) { before = k; break; }
+    }
+    z.insertBefore(ph, before);
+  };
+  const onUp = e => {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onUp);
+    if (!going) { openMenu(id, e.clientX, e.clientY); return; }
+    const z = over; let idx = 0;
+    const inZone = z && ph.parentNode === z;
+    if (inZone) { const kids = [...z.children]; idx = kids.slice(0, kids.indexOf(ph)).filter(k => k !== node && k.classList.contains('item')).length; }
+    ghost.remove(); ph.remove(); node.classList.remove('dragging'); if (z) z.classList.remove('over');
+    if (inZone) {
+      removeItem(id);
+      listOf(z.dataset.zone).splice(idx, 0, id);
+      save();
+    }
+    render();
+  };
+  document.addEventListener('pointermove', onMove, { passive: false });
+  document.addEventListener('pointerup', onUp);
+  document.addEventListener('pointercancel', onUp);
+}
+
+/* ===== Image menu (click / right-click) ===== */
+const menu = $('#menu');
+function closeMenu(){ menu.classList.remove('open'); }
+document.addEventListener('pointerdown', e => { if (!menu.contains(e.target) && !e.target.closest('.item')) closeMenu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+function openMenu(id, x, y){
+  const it = S.items[id]; if (!it) return;
+  menu.innerHTML = '';
+  const tl = el('label', '', 'Title'), ti = el('input'); ti.type = 'text'; ti.value = it.title || ''; ti.placeholder = 'Optional title';
+  ti.onchange = () => { it.title = ti.value.trim(); render(); save(); };
+  tl.append(ti);
+  const sl = el('label', '', 'Size'), sr = el('input'); sr.type = 'range'; sr.min = 50; sr.max = 220; sr.value = it.size || 100;
+  sr.oninput = () => { it.size = +sr.value; document.querySelectorAll(`.item[data-id="${id}"]`).forEach(n => n.style.setProperty('--s', it.size + 'px')); };
+  sr.onchange = save; sl.append(sr);
+  const ml = el('label', '', 'Move to'), ms = el('select');
+  ms.append(new Option('Unranked', 'pool'));
+  S.tiers.forEach(t => ms.append(new Option(t.name || '(unnamed)', t.id)));
+  ms.value = S.pool.includes(id) ? 'pool' : S.tiers.find(t => t.items.includes(id))?.id;
+  ms.onchange = () => { removeItem(id); listOf(ms.value).push(id); render(); save(); closeMenu(); };
+  ml.append(ms);
+  const row = el('div', 'row'), rep = el('button', 'btn', 'Replace'), del = el('button', 'btn danger', 'Delete');
+  rep.onclick = () => { repId = id; $('#fRep').click(); };
+  del.onclick = () => { removeItem(id); delete S.items[id]; render(); save(); closeMenu(); };
+  row.append(rep, del);
+  menu.append(tl, sl, ml, row);
+  menu.classList.add('open');
+  const w = 240, h = menu.offsetHeight;
+  menu.style.left = Math.max(8, Math.min(x, innerWidth - w - 8)) + 'px';
+  menu.style.top = Math.max(8, Math.min(y, innerHeight - h - 8)) + 'px';
+}
+let repId = null;
+
+/* ===== Toolbar actions ===== */
+$('#bAdd').onclick = () => $('#fImg').click();
+$('#fImg').onchange = async e => {
+  for (const f of e.target.files) {
+    try { const id = uid(); S.items[id] = { src: await shrink(f), title: '', size: 100 }; S.pool.push(id); }
+    catch { toast(`Could not read ${f.name}`); }
+  }
+  e.target.value = ''; render(); save();
+};
+$('#fRep').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f || !S.items[repId]) return;
+  try { S.items[repId].src = await shrink(f); render(); save(); closeMenu(); } catch { toast('Could not read that image.'); }
+};
+$('#bTier').onclick = () => {
+  S.tiers.push({ id: uid(), name: 'New', color: '#c9a0ff', items: [] }); render(); save();
+  const t = document.querySelectorAll('.ltxt'); const last = t[t.length - 1]; last.scrollIntoView({ block: 'center' }); last.focus();
+  getSelection().selectAllChildren(last);
+};
+$('#bSave').onclick = () => { if (persist(SAVED)) toast('Tier list saved'); };
+$('#bLoad').onclick = () => { const d = read(SAVED); if (!d) return toast('Nothing saved yet.'); S = d; render(); save(); toast('Tier list loaded'); };
+$('#bReset').onclick = () => { if (confirm('Reset the tier list? Images and changes will be cleared.')) { S = fresh(); render(); save(); } };
+$('#bJson').onclick = () => download(new Blob([JSON.stringify(S)], { type: 'application/json' }), 'tierlist.json');
+$('#bImp').onclick = () => $('#fJson').click();
+$('#fJson').onchange = e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  f.text().then(t => { const d = JSON.parse(t); if (!valid(d)) throw 0; S = d; render(); save(); toast('Imported'); }).catch(() => toast('That file is not a valid tier list.'));
+};
+function download(blob, name){ const a = el('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
+
+/* ===== PNG export (drawn on a canvas, no library) ===== */
+$('#bPng').onclick = async () => {
+  const W = 1200, LW = 140, GAP = 6, PAD = 6, MIN = 104, TH = 16;
+  const imgs = {};
+  await Promise.all(Object.entries(S.items).map(([id, it]) => new Promise(r => { const i = new Image(); i.onload = () => { imgs[id] = i; r(); }; i.onerror = r; i.src = it.src; })));
+  const rows = S.tiers.map(t => {
+    let x = LW + PAD, y = PAD, lineH = 0; const cells = [];
+    t.items.filter(id => imgs[id]).forEach(id => {
+      const it = S.items[id], im = imgs[id], s = it.size || 100, k = Math.min(1, s / Math.max(im.width, im.height));
+      const w = Math.round(im.width * k), h = Math.round(im.height * k), cw = Math.max(w, it.title ? Math.min(s, 80) : 0), ch = h + (it.title ? TH : 0);
+      if (x + cw > W - PAD && x > LW + PAD) { x = LW + PAD; y += lineH + GAP; lineH = 0; }
+      cells.push({ id, x, y, w, h, cw }); x += cw + GAP; lineH = Math.max(lineH, ch);
+    });
+    return { t, cells, h: Math.max(MIN, y + lineH + PAD) };
+  });
+  const H = rows.reduce((a, r) => a + r.h, 0), c = document.createElement('canvas');
+  c.width = W; c.height = H; const g = c.getContext('2d');
+  g.fillStyle = '#1a1a1a'; g.fillRect(0, 0, W, H);
+  let y0 = 0;
+  rows.forEach(r => {
+    g.fillStyle = r.t.color; g.fillRect(0, y0, LW, r.h);
+    g.fillStyle = ink(r.t.color); g.textAlign = 'center'; g.textBaseline = 'middle';
+    let fs = 28; g.font = `700 ${fs}px system-ui,sans-serif`;
+    while (g.measureText(r.t.name).width > LW - 16 && fs > 10) g.font = `700 ${--fs}px system-ui,sans-serif`;
+    g.fillText(r.t.name, LW / 2, y0 + r.h / 2);
+    r.cells.forEach(c2 => {
+      g.drawImage(imgs[c2.id], c2.x + (c2.cw - c2.w) / 2, y0 + c2.y, c2.w, c2.h);
+      const title = S.items[c2.id].title;
+      if (title) { g.fillStyle = '#ececf0'; g.font = '12px system-ui,sans-serif'; g.fillText(title.length > 14 ? title.slice(0, 13) + '…' : title, c2.x + c2.cw / 2, y0 + c2.y + c2.h + 9); }
+    });
+    g.fillStyle = '#000'; g.fillRect(0, y0 + r.h - 2, W, 2); g.fillRect(LW - 2, y0, 2, r.h);
+    y0 += r.h;
+  });
+  c.toBlob(b => download(b, 'tierlist.png'));
+};
+
+/* ===== Init ===== */
+render();
+</script>
+</body>
+</html>
