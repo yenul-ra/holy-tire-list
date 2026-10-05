@@ -1,3 +1,16 @@
+## You can't run it on GitHub Pages or inside the tier list.
+## Uploading it to GitHub only stores the file. 
+## You have to run it on your own computer in a terminal or command prompt.
+
+''' 
+How to run it ;
+
+1. First of all, you should install Python on your computer first ( there are tons of videos on YouTube about it, so do it
+2. Now install the OpenCV library on your pc so you can open your terminal and type this ---- pip install pillow numpy opencv-python
+3. Now you can use this to crop the images before uploading to the browser 
+
+'''
+
 import argparse
 from pathlib import Path
 
@@ -111,7 +124,7 @@ def main():
     if not src.is_dir():
         raise SystemExit(f"Not a folder: {src}")
     dst = Path(args.output) if args.output else src / "smart_cropped"
-    dst.mkdir(parents=True, exist_ok=True)
+    dst.mkdir(parents=True, pip install pillow numpy opencv-pythonexist_ok=True)
 
     files = [p for p in sorted(src.iterdir()) if p.suffix.lower() in EXTS]
     if not files:
