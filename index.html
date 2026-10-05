@@ -326,17 +326,9 @@ $('#bPng').onclick = async () => {
   c.toBlob(b => download(b, 'tierlist.png'));
 };
 
-/* ===== Fullscreen ===== */
-$('#bFull').onclick = () => {
-  if (document.fullscreenElement) document.exitFullscreen();
-  else document.documentElement.requestFullscreen().catch(() => toast('Fullscreen is not available here.'));
-};
-document.addEventListener('fullscreenchange', () => {
-  $('#bFull').textContent = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
-});
-
 /* ===== Init ===== */
 render();
 </script>
+<script src="fullscreen.js"></script>
 </body>
 </html>
