@@ -75,6 +75,7 @@ main{max-width:1200px;margin:20px auto;padding:0 16px 60px}
   <button class="btn" id="bJson">Export JSON</button>
   <button class="btn" id="bImp">Import JSON</button>
   <button class="btn danger" id="bReset">Reset</button>
+  <button class="btn" id="bFull">Fullscreen</button>
 </header>
 <main>
   <div id="tiers"></div>
@@ -324,6 +325,15 @@ $('#bPng').onclick = async () => {
   });
   c.toBlob(b => download(b, 'tierlist.png'));
 };
+
+/* ===== Fullscreen ===== */
+$('#bFull').onclick = () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(() => toast('Fullscreen is not available here.'));
+};
+document.addEventListener('fullscreenchange', () => {
+  $('#bFull').textContent = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
+});
 
 /* ===== Init ===== */
 render();
